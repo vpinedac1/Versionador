@@ -9,8 +9,8 @@ def consultar_version():
     return version
 
 
-def consultar_servidores(registros_servidor):
-    print('Los siguientes servidores se actualizaran:')
+def consultar_servidores(registros_servidor, version):
+    print(f'Los siguientes servidores se actualizaran en la versión {version}:')
     for IdServidor, DireccionIP, User, Password in registros_servidor:
         print(f'IP: {DireccionIP}')
     while (a := input('Desea Continuar[S/N]: ')) not in {'S', 'N'}:
@@ -68,8 +68,8 @@ def componente(conn, cursor, seleccion):
         print("Error en la consulta Tabla Servidor")
     else:
         if len(registros_servidor) > 0:
-            if consultar_servidores(registros_servidor):
-                version = consultar_version()
+            version = consultar_version()
+            if consultar_servidores(registros_servidor, version):
                 for IdServidor, DireccionIP, User, Password in registros_servidor:
                     client = paramiko.SSHClient()
                     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
