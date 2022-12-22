@@ -1,13 +1,14 @@
 import scripts as s
 from colorama import init, Fore, Back, Style
+from libreria import borrar_pantalla
 
 
 def mostrar_menu(nombre, opciones):  # incorporamos el parámetro para mostrar el nombre del menú
     print(Style.BRIGHT)
-    print(f'#  {nombre}. Seleccione una opción:')
+    print(f'#  {nombre}')
     print(Style.RESET_ALL)
     for clave in opciones:
-        print(f' {clave}) {opciones[clave][0]}')
+        print(f'    {clave} - {opciones[clave][0]}')
 
 
 def leer_opcion(opciones):
@@ -23,6 +24,7 @@ def ejecutar_opcion(conn, cursor, opcion, opciones, seleccion):
 def generar_menu(conn, cursor, nombre, opciones, opcion_salida,
                  seleccion):  # incorporamos el parámetro para mostrar el nombre del menú
     opcion = None
+    borrar_pantalla()
     while opcion != opcion_salida:
         mostrar_menu(nombre, opciones)
         opcion = leer_opcion(opciones)
@@ -32,7 +34,9 @@ def generar_menu(conn, cursor, nombre, opciones, opcion_salida,
             seleccion.pop()
         ejecutar_opcion(conn, cursor, opcion, opciones, seleccion)
         print()
-    conn.close()
+
+    if nombre == 'Menú Ambientes':
+        conn.close()
 
 
 def cargar_opciones(conn, cursor, seleccion):
@@ -45,9 +49,9 @@ def cargar_opciones(conn, cursor, seleccion):
 
             i = 1
             for registro in registros:
-                opciones[f'{i}'] = (registro[0] + " >", menu_tipo_componente)
+                opciones[f'{i}'] = (registro[0], menu_tipo_componente)
                 i = i + 1
-            opciones['S'] = ("Salir >", salir)
+            opciones['S'] = ("Salir", salir)
 
         except:
             print("Error en la consulta Tabla Ambiente")
@@ -60,9 +64,9 @@ def cargar_opciones(conn, cursor, seleccion):
 
             i = 1
             for registro in registros:
-                opciones[f'{i}'] = (registro[0] + " >", menu_componente)
+                opciones[f'{i}'] = (registro[0], menu_componente)
                 i = i + 1
-            opciones['S'] = ("Salir >", salir)
+            opciones['S'] = ("Salir", salir)
 
         except:
             print("Error en la consulta Tabla Componente Tipo")
@@ -75,9 +79,9 @@ def cargar_opciones(conn, cursor, seleccion):
 
             i = 1
             for registro in registros:
-                opciones[f'{i}'] = (registro[0] + " >", s.componente)
+                opciones[f'{i}'] = (registro[0], s.componente)
                 i = i + 1
-            opciones['S'] = ("Salir >", salir)
+            opciones['S'] = ("Salir", salir)
 
         except:
             print("Error en la consulta Tabla Componente")
@@ -88,20 +92,20 @@ def cargar_opciones(conn, cursor, seleccion):
 def menu_principal(conn, cursor):
     seleccion = []
     opciones = cargar_opciones(conn, cursor, seleccion)
-    generar_menu(conn, cursor, 'Menú principal', opciones, 'S', seleccion)  # indicamos el nombre del menú
+    generar_menu(conn, cursor, 'MENÚ AMBIENTES', opciones, 'S', seleccion)  # indicamos el nombre del menú
 
 
 def menu_tipo_componente(conn, cursor, seleccion):
     opciones = cargar_opciones(conn, cursor, seleccion)
-    generar_menu(conn, cursor, 'Seleccione Tipo de Componente', opciones, 'S',
+    generar_menu(conn, cursor, 'MENÚ TIPO COMPONENTE', opciones, 'S',
                  seleccion)  # indicamos el nombre del submenú
 
 
 def menu_componente(conn, cursor, seleccion):
     opciones = cargar_opciones(conn, cursor, seleccion)
-    generar_menu(conn, cursor, 'Seleccione un Componente', opciones, 'S',
+    generar_menu(conn, cursor, 'MENÚ COMPONENTE', opciones, 'S',
                  seleccion)  # indicamos el nombre del submenú
 
 
 def salir(conn, cursor, seleccion):
-    print('Saliendo')
+    borrar_pantalla()

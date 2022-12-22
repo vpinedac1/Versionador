@@ -21,7 +21,7 @@ def consultar_servidores(registros_servidor):
         return False
 
 
-def actualizar_version(conn, cursor,ambiente, comp, servidor, version):
+def actualizar_version(conn, cursor, ambiente, comp, servidor, version):
 
     sql_buscar_version = f'SELECT * FROM version WHERE IdAmbiente = {ambiente} AND IdComponente = {comp} AND ' \
                          f'IdServidor = {servidor}'
