@@ -102,7 +102,6 @@ def componente(conn, cursor, seleccion):
 
                             for comando, TiempoComando in registros_comandos:
                                 nuevo_comando = comando.replace('+version', version)
-                                #                                #print(nuevo_comando)
                                 stdin, stdout, stderr = client.exec_command(nuevo_comando)
                                 time.sleep(TiempoComando)
                                 error = stderr.read()
