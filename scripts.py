@@ -4,6 +4,7 @@ from colorama import init, Fore, Back, Style
 import mysql.connector
 from progress.bar import ChargingBar
 from libreria import borrar_pantalla
+from datetime import datetime
 
 
 def consultar_version():
@@ -23,6 +24,18 @@ def consultar_servidores(registros_servidor, version):
         return False
 
 
+def actualizar_version_log(conn, cursor, ambiente, comp, servidor, version, fecha):
+    try:
+        sql_insert_version_log = f"""INSERT INTO  version_log(IdAmbiente, IdComponente, IdServidor, Version, fecha) 
+                            VALUES({ambiente}, {comp}, {servidor}, '{version}', '{fecha}')"""
+        cursor.execute(sql_insert_version_log)
+        conn.commit()
+    except mysql.connector.Error as err:
+        print("Error no se pudo Insertar Tabla Version Log", err)
+        # Rolling back in case of error
+        conn.rollback()
+
+
 def actualizar_version(conn, cursor, ambiente, comp, servidor, version):
     sql_buscar_version = f'SELECT * FROM version WHERE IdAmbiente = {ambiente} AND IdComponente = {comp} AND ' \
                          f'IdServidor = {servidor}'
@@ -35,22 +48,33 @@ def actualizar_version(conn, cursor, ambiente, comp, servidor, version):
     else:
         if len(registros_version) > 0:
             try:
-                sql_update_version = f'UPDATE version SET  Version = "{version}"'
+                now = datetime.now()
+                fecha = now.strftime("%Y-%m-%d %H:%M:%S")
+                sql_update_version = f'UPDATE version SET  Version = "{version}", ' \
+                                     f'Fecha = "{fecha}"  ' \
+                                     f'WHERE IdAmbiente = {ambiente} AND IdComponente = {comp} AND ' \
+                                     f'IdServidor = {servidor}'
                 cursor.execute(sql_update_version)
                 conn.commit()
             except mysql.connector.Error as err:
                 print("Error no se pudo actualizar Tabla Version", err)
                 conn.rollback()
+            else:
+                actualizar_version_log(conn, cursor, ambiente, comp, servidor, version, fecha)
         else:
             try:
-                sql_insert_version = f"""INSERT INTO  version(IdAmbiente, IdComponente, IdServidor, Version) VALUES""" \
-                                     f"""({ambiente}, {comp}, {servidor}, '{version}')"""
+                now = datetime.now()
+                fecha = now.strftime("%Y-%m-%d %H:%M:%S")
+                sql_insert_version = f"""INSERT INTO  version(IdAmbiente, IdComponente, IdServidor, Version, fecha) 
+                                    VALUES({ambiente}, {comp}, {servidor}, '{version}', '{fecha}')"""
                 cursor.execute(sql_insert_version)
                 conn.commit()
             except mysql.connector.Error as err:
                 print("Error no se pudo Insertar Tabla Version", err)
                 # Rolling back in case of error
                 conn.rollback()
+            else:
+                actualizar_version_log(conn, cursor, ambiente, comp, servidor, version, fecha)
 
 
 def componente(conn, cursor, seleccion):
@@ -109,6 +133,7 @@ def componente(conn, cursor, seleccion):
                                     log_error.append(error.decode("utf-8"))
                                 bar.next()
                             bar.finish()
+                            actualizar_version(conn, cursor, ambiente, comp, IdServidor, version)
                             print('Errores: ', len(log_error))
                             if len(log_error) > 0:
                                 while (a := input('Desea visualizar los Errores [S/N]: ')) not in {'S', 'N'}:
@@ -116,7 +141,6 @@ def componente(conn, cursor, seleccion):
                                 if a == 'S':
                                     for e in log_error:
                                         print(e)
-                            actualizar_version(conn, cursor, ambiente, comp, IdServidor, version)
                         if i == len(registros_servidor):
                             print(Fore.GREEN + 'PROCESO FINALIZADO')
                             print(Style.RESET_ALL)
