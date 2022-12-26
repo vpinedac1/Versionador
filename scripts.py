@@ -2,6 +2,8 @@ import time
 import paramiko
 from colorama import init, Fore, Back, Style
 import mysql.connector
+from progress.bar import ChargingBar
+from libreria import borrar_pantalla
 
 
 def consultar_version():
@@ -10,7 +12,7 @@ def consultar_version():
 
 
 def consultar_servidores(registros_servidor, version):
-    print(f'Los siguientes servidores se actualizaran en la versión {version}:')
+    print(f'Los siguientes servidores se actualizaran en la versión v{version}:')
     for IdServidor, DireccionIP, User, Password in registros_servidor:
         print(f'IP: {DireccionIP}')
     while (a := input('Desea Continuar[S/N]: ')) not in {'S', 'N'}:
@@ -22,7 +24,6 @@ def consultar_servidores(registros_servidor, version):
 
 
 def actualizar_version(conn, cursor, ambiente, comp, servidor, version):
-
     sql_buscar_version = f'SELECT * FROM version WHERE IdAmbiente = {ambiente} AND IdComponente = {comp} AND ' \
                          f'IdServidor = {servidor}'
 
@@ -68,12 +69,13 @@ def componente(conn, cursor, seleccion):
         print("Error en la consulta Tabla Servidor")
     else:
         if len(registros_servidor) > 0:
+            borrar_pantalla()
             version = consultar_version()
             if consultar_servidores(registros_servidor, version):
+                i = 1
                 for IdServidor, DireccionIP, User, Password in registros_servidor:
                     client = paramiko.SSHClient()
                     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-
                     try:
                         client.connect(DireccionIP, username=User, password=Password)
                         # Validamos que se pueda ejecutar el shell
@@ -93,24 +95,38 @@ def componente(conn, cursor, seleccion):
                             print("Error en la consulta Tabla Comando")
 
                         else:
+                            borrar_pantalla()
+                            bar = ChargingBar(f'Actualizando servidor {DireccionIP}:', max=len(registros_comandos))
                             print(f'Conectado al Servidor IP: {DireccionIP}')
+                            log_error = []
+
                             for comando, TiempoComando in registros_comandos:
                                 nuevo_comando = comando.replace('+version', version)
-                                print(nuevo_comando)
+                                #                                #print(nuevo_comando)
                                 stdin, stdout, stderr = client.exec_command(nuevo_comando)
                                 time.sleep(TiempoComando)
-                                print('time.sleep = ', TiempoComando)
-                                print('Error: ', stderr.read())
-                                print('Salida: ', stdout.read())
-
+                                error = stderr.read()
+                                if error.decode("utf-8") != '':
+                                    log_error.append(error.decode("utf-8"))
+                                bar.next()
+                            bar.finish()
+                            print('Errores: ', len(log_error))
+                            if len(log_error) > 0:
+                                while (a := input('Desea visualizar los Errores [S/N]: ')) not in {'S', 'N'}:
+                                    print('Opción incorrecta, vuelva a intentarlo.')
+                            if a == 'S':
+                                for e in log_error:
+                                    print(e)
                             actualizar_version(conn, cursor, ambiente, comp, IdServidor, version)
-
+                        if i == len(registros_servidor):
+                            print(Fore.GREEN + 'PROCESO FINALIZADO')
+                            print(Style.RESET_ALL)
+                        i += 1
                         input("\n Presione Enter para continuar")
+                        borrar_pantalla()
 
                     client.close()
                     shell.close()
-                print(Fore.GREEN + 'Proceso finalizado')
-                print(Style.RESET_ALL)
                 seleccion.pop()
             else:
                 seleccion.pop()
@@ -118,5 +134,3 @@ def componente(conn, cursor, seleccion):
             print(Fore.YELLOW + 'NO SE ENCUENTRAN SERVIDORES PARA LA SELECCIÓN')
             print(Style.RESET_ALL)
             seleccion.pop()
-
-
