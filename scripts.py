@@ -114,9 +114,9 @@ def componente(conn, cursor, seleccion):
                             if len(log_error) > 0:
                                 while (a := input('Desea visualizar los Errores [S/N]: ')) not in {'S', 'N'}:
                                     print('Opción incorrecta, vuelva a intentarlo.')
-                            if a == 'S':
-                                for e in log_error:
-                                    print(e)
+                                if a == 'S':
+                                    for e in log_error:
+                                        print(e)
                             actualizar_version(conn, cursor, ambiente, comp, IdServidor, version)
                         if i == len(registros_servidor):
                             print(Fore.GREEN + 'PROCESO FINALIZADO')
