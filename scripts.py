@@ -5,10 +5,58 @@ import mysql.connector
 from progress.bar import ChargingBar
 from libreria import borrar_pantalla
 from datetime import datetime
+from pynput import keyboard as kb
+import re
+
+
+def pulsa(tecla):
+    print('Se ha pulsado la tecla ' + str(tecla))
+
+
+def suelta(tecla):
+    print('Se ha soltado la tecla ' + str(tecla))
+    if tecla == kb.KeyCode.from_char('Key.esc'):
+        return False
+
+
+# definimos las funciones que se ejecutarán en la detección
+def pulsa_ctrl_q():
+    print('Se ha pulsado <ctrl>+q')
+
+
+def pulsa_alt_c():
+    print('Se ha pulsado <alt>+c')
+
+
+def pulsa_ctrl_alt_s():
+    print('Se ha pulsado <ctrl>+<alt>+s')
 
 
 def consultar_version():
-    version = input('Version: ')
+    # definimos un diccionario con cada combinación de teclas y la función asociada
+    """hotkeys = {'<ctrl>+q': pulsa_ctrl_q,
+               '<alt>+c': pulsa_alt_c,
+               '<ctrl>+<alt>+s': pulsa_ctrl_alt_s}
+
+    # finalmente lanzamos el escuchador con la clase GlobalHotKeys
+    with kb.GlobalHotKeys(hotkeys) as escuchador:
+        escuchador.join()"""
+    er_version = re.compile(r"^(?:(?!\.\.)[0-9\.]){1,20}$")
+
+    while True:
+        version = input('Version: ')
+        er_valido = er_version.search(version)
+
+        if er_valido:
+            if version[0] != '.':
+                break
+            else:
+                borrar_pantalla()
+                print("Ingrese un valor valido para una Version, no mayor a 20 digitos Ej: 1.2.0")
+        else:
+            borrar_pantalla()
+            print("Ingrese un valor valido para una Version, no mayor a 20 digitos Ej: 1.2.0")
+
     return version
 
 
